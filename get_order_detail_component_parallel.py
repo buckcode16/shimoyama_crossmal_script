@@ -19,8 +19,8 @@ BASE_URLS = {
     "order_component": "https://crossmall.jp/webapi2/get_order_component"
 }
 # DELIVERY_DATE = "2025-03-18"
-ORDER_DATE_FR = "2025-03-18"
-ORDER_DATE_TO = "2025-03-18"
+ORDER_DATE_FR = "2025-02-24"
+ORDER_DATE_TO = "2025-02-24"
 DROPBOX_ACCESS_TOKEN = os.getenv("DROPBOX_ACCESS_TOKEN")
 DROPBOX_PATH = "/Reports/order.xml"  # Base path in Dropbox
 
