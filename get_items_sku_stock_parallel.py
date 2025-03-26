@@ -174,11 +174,21 @@ def main():
     output_filename = "fetched_items_sku_stock_tree.xml"
     tree = ET.ElementTree(root)
     if os.getenv("WRITE_XML", "false").lower() == "true":
+        # Write XML to a persistent file.
         tree.write(output_filename, encoding="utf-8", xml_declaration=True)
         print(f"Final hierarchical XML saved to {output_filename}")
+        upload_file_to_dropbox(output_filename, DROPBOX_PATH, DROPBOX_ACCESS_TOKEN)
     else:
-        print("WRITE_XML is not true, so skipping local file write.")
-    upload_file_to_dropbox(output_filename, DROPBOX_PATH, DROPBOX_ACCESS_TOKEN)
+        print("WRITE_XML is not true, so not saving a persistent local file.")
+        # Write XML to a temporary file, upload it, and then remove the file.
+        import tempfile
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".xml") as tmp:
+            tree.write(tmp.name, encoding="utf-8", xml_declaration=True)
+            temp_filename = tmp.name
+        print(f"Temporary file created at {temp_filename} for upload.")
+        upload_file_to_dropbox(temp_filename, DROPBOX_PATH, DROPBOX_ACCESS_TOKEN)
+        os.remove(temp_filename)
+        print("Temporary file removed after upload.")
 
 if __name__ == "__main__":
     main()
