@@ -8,6 +8,8 @@ import os
 import tempfile
 from dropbox_uploader import upload_file_to_dropbox
 from dotenv import load_dotenv
+import datetime
+
 load_dotenv()
 
 # API Credentials and Endpoints
@@ -19,8 +21,13 @@ BASE_URLS = {
     "order_component": "https://crossmall.jp/webapi2/get_order_component"
 }
 # DELIVERY_DATE = "2025-03-18"
-ORDER_DATE_FR = "2025-02-24"
-ORDER_DATE_TO = "2025-02-24"
+# ORDER_DATE_FR = "2025-03-20"
+# ORDER_DATE_TO = "2025-03-20"
+
+yesterday = datetime.date.today() - datetime.timedelta(days=1)
+ORDER_DATE_FR = yesterday.strftime("%Y-%m-%d")
+ORDER_DATE_TO = yesterday.strftime("%Y-%m-%d")
+
 DROPBOX_ACCESS_TOKEN = os.getenv("DROPBOX_ACCESS_TOKEN")
 DROPBOX_PATH = "/Reports/order.xml"  # Base path in Dropbox
 
