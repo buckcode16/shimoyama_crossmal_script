@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import copy
 import asyncio
 import hashlib
@@ -27,8 +26,6 @@ BASE_URLS = {
 yesterday = datetime.date.today() - datetime.timedelta(days=1)
 ORDER_DATE_FR = yesterday.strftime("%Y-%m-%d")
 ORDER_DATE_TO = yesterday.strftime("%Y-%m-%d")
-
-DROPBOX_ACCESS_TOKEN = os.getenv("DROPBOX_ACCESS_TOKEN")
 DROPBOX_PATH = "/Reports/order.xml"  # Base path in Dropbox
 
 # Utility: Generate MD5 signature from query string and auth key
@@ -194,7 +191,7 @@ async def main():
         with open(output_filename, "wb") as f:
             f.write(final_xml)
         print(f"Fetched order details (with components) saved to {output_filename}")
-        upload_file_to_dropbox(output_filename, DROPBOX_PATH, DROPBOX_ACCESS_TOKEN)
+        upload_file_to_dropbox(output_filename, DROPBOX_PATH)
     else:
         print("WRITE_XML is not true, so skipping persistent local file write.")
         # Write to a temporary file, upload, then remove it.
@@ -203,7 +200,7 @@ async def main():
             tmp.write(final_xml)
             temp_filename = tmp.name
         print(f"Temporary file created at {temp_filename} for upload.")
-        upload_file_to_dropbox(temp_filename, DROPBOX_PATH, DROPBOX_ACCESS_TOKEN)
+        upload_file_to_dropbox(temp_filename, DROPBOX_PATH)
         os.remove(temp_filename)
         print("Temporary file removed after upload.")
 

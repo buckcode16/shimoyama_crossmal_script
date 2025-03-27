@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import asyncio
 import hashlib
 import httpx
@@ -17,9 +16,9 @@ CONDITION = "1"
 BASE_URL_ITEMS = "https://crossmall.jp/webapi2/get_item"
 BASE_URL_SKU = "https://crossmall.jp/webapi2/get_item_sku"
 BASE_URL_STOCK = "https://crossmall.jp/webapi2/get_stock"
-
-DROPBOX_ACCESS_TOKEN = os.getenv("DROPBOX_ACCESS_TOKEN")
 DROPBOX_PATH = "/Reports/stock.xml"
+
+
 
 # --- Utility functions ---
 def generate_signature(query_string, auth_key):
@@ -177,7 +176,7 @@ def main():
         # Write XML to a persistent file.
         tree.write(output_filename, encoding="utf-8", xml_declaration=True)
         print(f"Final hierarchical XML saved to {output_filename}")
-        upload_file_to_dropbox(output_filename, DROPBOX_PATH, DROPBOX_ACCESS_TOKEN)
+        upload_file_to_dropbox(output_filename, DROPBOX_PATH)
     else:
         print("WRITE_XML is not true, so not saving a persistent local file.")
         # Write XML to a temporary file, upload it, and then remove the file.
@@ -186,7 +185,7 @@ def main():
             tree.write(tmp.name, encoding="utf-8", xml_declaration=True)
             temp_filename = tmp.name
         print(f"Temporary file created at {temp_filename} for upload.")
-        upload_file_to_dropbox(temp_filename, DROPBOX_PATH, DROPBOX_ACCESS_TOKEN)
+        upload_file_to_dropbox(temp_filename, DROPBOX_PATH)
         os.remove(temp_filename)
         print("Temporary file removed after upload.")
 
