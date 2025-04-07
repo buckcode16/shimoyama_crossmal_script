@@ -16,7 +16,7 @@ CONDITION = "1"
 BASE_URL_ITEMS = "https://crossmall.jp/webapi2/get_item"
 BASE_URL_SKU = "https://crossmall.jp/webapi2/get_item_sku"
 BASE_URL_STOCK = "https://crossmall.jp/webapi2/get_stock"
-DROPBOX_PATH = "/Reports/stock.xml"
+DROPBOX_PATH = "/Reports/stock/stock.xml"
 
 
 

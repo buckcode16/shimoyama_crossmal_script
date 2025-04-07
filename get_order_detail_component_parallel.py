@@ -26,7 +26,7 @@ BASE_URLS = {
 yesterday = datetime.date.today() - datetime.timedelta(days=1)
 ORDER_DATE_FR = yesterday.strftime("%Y-%m-%d")
 ORDER_DATE_TO = yesterday.strftime("%Y-%m-%d")
-DROPBOX_PATH = "/Reports/order.xml"  # Base path in Dropbox
+DROPBOX_PATH = "/Reports/order/order.xml"  
 
 # Utility: Generate MD5 signature from query string and auth key
 def generate_signature(query_string, auth_key):
