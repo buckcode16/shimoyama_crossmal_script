@@ -95,16 +95,23 @@ def upload_file_to_dropbox(local_file_path: str, dropbox_destination_path: str, 
 
         # Construct final path
         if add_timestamp:
-            # JST timezone for timestamp
+            # JST timezone
             jst = datetime.timezone(datetime.timedelta(hours=9))
-            timestamp = datetime.datetime.now(jst).strftime("%Y%m%d_%H%M%S")
+            now_jst = datetime.datetime.now(jst)
+
+            # Calculate yesterday's date
+            yesterday_date = now_jst - datetime.timedelta(days=1)
+            # Format as YYYYMMDD for yesterday's date ONLY
+            timestamp = yesterday_date.strftime("%Y%m%d")
+
+            # Construct the path using only yesterday's date timestamp
             final_dropbox_path = f"{folder_path}/{base_filename}_{timestamp}{ext}"
         else:
              # Ensure no double slashes if folder is root '/'
-            if folder_path == '/':
-                final_dropbox_path = f"/{base_filename}{ext}"
-            else:
-                final_dropbox_path = f"{folder_path}/{base_filename}{ext}"
+             if folder_path == '/':
+                 final_dropbox_path = f"/{base_filename}{ext}"
+             else:
+                 final_dropbox_path = f"{folder_path}/{base_filename}{ext}"
 
         # --- Perform Upload ---
         print(f"Uploading {len(file_content)} bytes to final path: {final_dropbox_path}")
