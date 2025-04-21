@@ -8,7 +8,7 @@ import tempfile
 from dropbox_uploader import upload_file_to_dropbox # Assuming this exists and works
 from dotenv import load_dotenv
 import datetime
-# import argparse # Removed: No longer using command-line arguments
+import argparse # Added for command-line arguments
 import traceback # Added for better error reporting
 
 load_dotenv()
@@ -293,7 +293,7 @@ async def process_single_order_date(order_date_str):
     print(f"--- Starting processing for Order Date: {order_date_str} ---")
     date_obj = datetime.datetime.strptime(order_date_str, '%Y-%m-%d').date()
     date_nodash = date_obj.strftime('%Y%m%d')
-    # Naming convention specific to order date - keeping original as requested
+    # Naming convention specific to order date
     output_filename = f"orders_{date_nodash}.xml"
     dropbox_target_path = f"/Reports/order/orders_{date_nodash}.xml" # Adjust path as needed
 
@@ -303,7 +303,7 @@ async def process_single_order_date(order_date_str):
     final_xml_bytes = None # Initialize
 
     try:
-        # Create a client session per date task for simplicity
+        # Create a client session per date task for simplicity, or pass one from main if preferred
         async with httpx.AsyncClient() as client:
             # Step 1: Fetch base order data for the specific order_date
             orders_data_dict = await async_fetch_base_orders_for_day(client, order_date=order_date_str)
@@ -392,61 +392,93 @@ async def process_single_order_date(order_date_str):
 
 
 # Main execution function
-async def main(): # Removed date arguments
-    # Calculate yesterday's date
+async def main(start_date_str, end_date_str):
     try:
-        today = datetime.date.today()
-        yesterday = today - datetime.timedelta(days=1)
-        yesterday_date_str = yesterday.strftime('%Y-%m-%d')
-    except Exception as e:
-         print(f"[ERROR] Could not calculate yesterday's date: {e}")
-         return
+        start_date = datetime.datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        end_date = datetime.datetime.strptime(end_date_str, '%Y-%m-%d').date()
+    except ValueError:
+        print("[ERROR] Invalid date format. Please use YYYY-MM-DD for both dates.")
+        return
 
-    print(f"[INFO] Determined target date (yesterday): {yesterday_date_str}")
+    if start_date > end_date:
+        print("[ERROR] Start date cannot be after end date.")
+        return
 
-    # Process only yesterday's date
-    print(f"[INFO] Starting processing job for order date: {yesterday_date_str}")
-    result = await process_single_order_date(yesterday_date_str)
+    # Generate list of dates to process
+    dates_to_process = []
+    current_date = start_date
+    while current_date <= end_date:
+        dates_to_process.append(current_date.strftime('%Y-%m-%d'))
+        current_date += datetime.timedelta(days=1)
 
-    # Simplified summary reporting for single date
+    if not dates_to_process:
+        print("[INFO] No dates found in the specified range.")
+        return
+
+    print(f"[INFO] Preparing to process {len(dates_to_process)} order dates from {start_date_str} to {end_date_str} concurrently.")
+
+    # Create concurrent tasks for each date
+    tasks = [process_single_order_date(date_str) for date_str in dates_to_process]
+
+    # Run tasks concurrently and gather results (including exceptions)
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    # Process results (same summary logic as before)
     print("\n--- Overall Processing Summary ---")
-    success = False
-    if isinstance(result, str):
-        if result.startswith("SUCCESS:"):
-            print(f"Successfully processed date with data: {yesterday_date_str}")
-            success = True
-        elif result.startswith("SUCCESS_NO_ORDERS:"):
-            print(f"No orders found for date: {yesterday_date_str}")
-            success = True # Treat as success (script ran correctly)
-        elif result.startswith("SUCCESS_NO_DATA:"):
-            print(f"Orders found but no data generated for date: {yesterday_date_str}")
-            success = True # Treat as success (script ran correctly)
-        elif result.startswith("ERROR_"):
-            print(f"Failed processing for date: {yesterday_date_str} ({result.split(':')[0]})")
-        else:
-            print(f"Unknown result string for date {yesterday_date_str}: {result}")
-    elif isinstance(result, Exception):
-        # Should be caught by task's try/except, but handle defensively
-         print(f"[SUMMARY-ERROR] An unexpected framework exception occurred for date {yesterday_date_str}: {result}")
-    else:
-        print(f"[SUMMARY-WARNING] Unknown result type for date {yesterday_date_str}: {type(result)} - {result}")
+    success_count = 0
+    no_orders_count = 0
+    no_data_count = 0
+    error_count = 0
+    unhandled_exceptions = 0
 
+    for result in results:
+        if isinstance(result, Exception):
+            # This catches exceptions raised *before* the task's own try/except could return an ERROR string
+            print(f"[SUMMARY-ERROR] An unexpected framework exception occurred: {result}")
+            unhandled_exceptions += 1
+            error_count += 1
+        elif isinstance(result, str):
+            if result.startswith("SUCCESS:"):
+                success_count += 1
+                # Detailed success already logged within the task
+            elif result.startswith("SUCCESS_NO_ORDERS:"):
+                no_orders_count += 1
+                print(f"[SUMMARY-INFO] No orders found for {result.split(':')[1]}")
+            elif result.startswith("SUCCESS_NO_DATA:"):
+                no_data_count += 1
+                print(f"[SUMMARY-INFO] Orders found but no data generated for {result.split(':')[1]}")
+            elif result.startswith("ERROR_"):
+                error_count += 1
+                print(f"[SUMMARY-ERROR] Failed processing for {result.split(':')[1]} ({result.split(':')[0]})")
+            else:
+                 print(f"[SUMMARY-WARNING] Unknown result string: {result}")
+                 error_count +=1
+        else:
+             print(f"[SUMMARY-WARNING] Unknown result type: {type(result)} - {result}")
+             error_count += 1
+
+
+    print("\n--- Final Counts ---")
+    print(f"Successfully processed dates with data: {success_count}")
+    print(f"Dates processed with no orders found:  {no_orders_count}")
+    print(f"Dates processed with no output data:   {no_data_count}")
+    print(f"Dates with processing errors:         {error_count}")
+    if unhandled_exceptions > 0:
+        print(f"  (Including {unhandled_exceptions} unexpected framework exceptions)")
+    print(f"Total dates attempted:                {len(dates_to_process)}")
     print("---------------------------------")
-    if success:
-         print("Job completed successfully (or with no data as expected).")
-    else:
-         print("Job failed. Check logs for details.")
 
 
 if __name__ == "__main__":
     if not ACCOUNT_ID or not AUTH_KEY:
         print("[ERROR] ACCOUNT_ID or AUTH_KEY environment variables not set. Exiting.")
     else:
-        # --- Command Line Argument Parsing Removed ---
-        # parser = argparse.ArgumentParser(description="Fetch and process Crossmall order data day-by-day for a given order date range.")
-        # parser.add_argument("start_date", help="Start date for order date filter (YYYY-MM-DD)")
-        # parser.add_argument("end_date", help="End date for order date filter (YYYY-MM-DD)")
-        # args = parser.parse_args()
+        # --- Command Line Argument Parsing ---
+        parser = argparse.ArgumentParser(description="Fetch and process Crossmall order data day-by-day for a given order date range.")
+        # Changed arguments back to represent the range of individual dates to process
+        parser.add_argument("start_date", help="Start date for order date filter (YYYY-MM-DD)")
+        parser.add_argument("end_date", help="End date for order date filter (YYYY-MM-DD)")
+        args = parser.parse_args()
 
-        # Run the main async function without arguments
-        asyncio.run(main())
+        # Run the main async function with parsed arguments
+        asyncio.run(main(args.start_date, args.end_date))

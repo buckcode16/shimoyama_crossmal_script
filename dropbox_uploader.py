@@ -102,10 +102,10 @@ def upload_file_to_dropbox(local_file_path: str, dropbox_destination_path: str, 
             # Calculate yesterday's date
             yesterday_date = now_jst - datetime.timedelta(days=1)
             # Format as YYYYMMDD for yesterday's date ONLY
-            timestamp = yesterday_date.strftime("%Y%m%d")
+            timestamp = yesterday_date.strftime("%Y%m%d_%H%M%S")
 
             # Construct the path using only yesterday's date timestamp
-            final_dropbox_path = f"{folder_path}/{base_filename}_{timestamp}{ext}"
+            final_dropbox_path = f"{folder_path}/{base_filename}{ext}"
         else:
              # Ensure no double slashes if folder is root '/'
              if folder_path == '/':
@@ -152,7 +152,7 @@ if __name__ == "__main__":
     # --- Perform Upload ---
     try:
         # Call the function directly, client initialization happens inside
-        final_path = upload_file_to_dropbox(EXAMPLE_LOCAL_FILE, EXAMPLE_DROPBOX_DESTINATION, add_timestamp=True)
+        final_path = upload_file_to_dropbox(EXAMPLE_LOCAL_FILE, EXAMPLE_DROPBOX_DESTINATION, add_timestamp=False)
         print(f"\nExample upload completed. Final file path: {final_path}")
     except (FileNotFoundError, ApiError, AuthError, Exception) as e:
          print(f"\nEXAMPLE UPLOAD FAILED: {e}")
