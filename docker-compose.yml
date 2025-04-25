@@ -4,6 +4,4 @@ services:
     build: .
     env_file: .env
     container_name: daily_tasks
-    # Run the shell script that executes your tasks
-    command: ["./crossmall_daily.sh"]
     restart: "no"
