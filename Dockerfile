@@ -15,4 +15,4 @@ RUN pip install --upgrade pip && \
 COPY . .
 
 # Ensure the NEW wrapper scripts are executable
-RUN chmod +x run_all_tasks.sh run_stock_only.sh
+RUN chmod +x run_all.sh run_stock.sh
